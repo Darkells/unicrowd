@@ -37,7 +37,7 @@ contract Crowdfunding is ReentrancyGuard {
         require(fundingClosed || block.timestamp >= deadline, "Crowdfunding not yet closed");
 
         uint256 amount = address(this).balance;
-        (bool sent, ) = payable(owner).call{value: amount}("");
+        (bool sent,) = payable(owner).call{value: amount}("");
         require(sent, "Failed to withdraw funds");
     }
 

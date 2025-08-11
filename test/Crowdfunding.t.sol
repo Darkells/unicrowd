@@ -6,6 +6,7 @@ import "../src/Crowdfunding.sol";
 
 contract CrowdfundingTest is Test {
     event Contribution(address indexed contributor, uint256 amount, string message);
+
     Crowdfunding public crowdfunding;
     address public owner = address(1);
     address public contributor = address(2);
