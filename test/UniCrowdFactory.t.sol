@@ -12,9 +12,10 @@ contract UniCrowdFactoryTest is Test {
     address public contributor = address(2);
     uint256 public goal = 10 ether;
     uint256 public duration = 7 days;
+    bytes32 public metaDataHash = keccak256(abi.encodePacked("Test Project Metadata"));
 
     event ProjectCreated(
-        address indexed owner, address indexed projectAddress, string name, uint256 goal, uint256 duration
+        address indexed owner, address indexed projectAddress, bytes32 metaDataHash, uint256 goal, uint256 duration
     );
 
     function setUp() public {
@@ -31,8 +32,8 @@ contract UniCrowdFactoryTest is Test {
         console.log("Expected address:", expectedAddress);
         vm.expectEmit(true, true, false, true);
 
-        emit ProjectCreated(owner, expectedAddress, "Test Project", goal, duration);
-        address projectAddress = factory.createProject(goal, duration, "Test Project");
+        emit ProjectCreated(owner, expectedAddress, metaDataHash, goal, duration);
+        address projectAddress = factory.createProject(goal, duration, metaDataHash);
         console.log("Actual project address:", projectAddress);
 
         assertEq(projectAddress, expectedAddress, "Project address mismatch");
@@ -48,15 +49,14 @@ contract UniCrowdFactoryTest is Test {
         Crowdfunding project = Crowdfunding(projectAddress);
         assertEq(project.owner(), owner, "Project owner mismatch");
         assertEq(project.goal(), goal, "Project goal mismatch");
-        assertEq(
-            keccak256(abi.encode(project.projectName())), keccak256(abi.encode("Test Project")), "Project name mismatch"
-        );
+        assertEq(project.metaDataHash(), metaDataHash, "Project metadata hash mismatch");
     }
 
     function testMultipleProjects() public {
+        bytes32 metaDataHash2 = keccak256(abi.encodePacked("Project 2 Metadata"));
         vm.startPrank(owner);
-        address project1 = factory.createProject(goal, duration, "Project 1");
-        address project2 = factory.createProject(goal * 2, duration * 2, "Project 2");
+        address project1 = factory.createProject(goal, duration, metaDataHash);
+        address project2 = factory.createProject(goal * 2, duration * 2, metaDataHash2);
         vm.stopPrank();
 
         address[] memory projects = factory.getProjects();

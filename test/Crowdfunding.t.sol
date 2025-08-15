@@ -10,8 +10,9 @@ contract CrowdfundingTest is Test {
     address public contributor = address(2);
     uint256 public goal = 10 ether;
     uint256 public duration = 7 days;
+    bytes32 public metaDataHash = keccak256(abi.encodePacked("Test Project Metadata"));
 
-    event Contribution(address indexed contributor, uint256 amount, string message);
+    event Contribution(address indexed contributor, uint256 amount);
 
     event Withdrawal(address indexed recipient, uint256 amount);
 
@@ -21,14 +22,14 @@ contract CrowdfundingTest is Test {
         vm.deal(owner, 100 ether);
         vm.deal(contributor, 100 ether);
         vm.prank(owner);
-        crowdfunding = new Crowdfunding(owner, goal, duration, "Test Project");
+        crowdfunding = new Crowdfunding(owner, goal, duration, metaDataHash);
     }
 
     function testContribute() public {
         vm.prank(contributor);
         vm.expectEmit(true, true, false, true);
-        emit Contribution(contributor, 1 ether, "Support Test Project!");
-        crowdfunding.contribute{value: 1 ether}("Support Test Project!");
+        emit Contribution(contributor, 1 ether);
+        crowdfunding.contribute{value: 1 ether}();
         assertEq(crowdfunding.totalRaised(), 1 ether);
         assertEq(crowdfunding.getBalance(), 1 ether);
         assertEq(crowdfunding.contributions(contributor), 1 ether);
@@ -36,7 +37,7 @@ contract CrowdfundingTest is Test {
 
     function testWithdrawSuccess() public {
         vm.prank(contributor);
-        crowdfunding.contribute{value: goal}("Support Test Project!");
+        crowdfunding.contribute{value: goal}();
         assertTrue(crowdfunding.fundingClosed());
 
         uint256 ownerBalanceBefore = owner.balance;
@@ -51,7 +52,7 @@ contract CrowdfundingTest is Test {
 
     function test_RevertWhen_NonOwnerWithdraws() public {
         vm.prank(contributor);
-        crowdfunding.contribute{value: 1 ether}("Support Test Project!");
+        crowdfunding.contribute{value: 1 ether}();
 
         vm.prank(contributor);
         vm.expectRevert("Only owner can withdraw");
@@ -60,7 +61,7 @@ contract CrowdfundingTest is Test {
 
     function test_RevertWhen_WithdrawBeforeClosed() public {
         vm.prank(contributor);
-        crowdfunding.contribute{value: 1 ether}("Support Test Project!");
+        crowdfunding.contribute{value: 1 ether}();
 
         vm.prank(owner);
         vm.expectRevert("Crowdfunding not yet closed");
@@ -69,7 +70,7 @@ contract CrowdfundingTest is Test {
 
     function testRefundSuccess() public {
         vm.prank(contributor);
-        crowdfunding.contribute{value: 1 ether}("Support Test Project!");
+        crowdfunding.contribute{value: 1 ether}();
         assertEq(crowdfunding.contributions(contributor), 1 ether);
 
         vm.warp(block.timestamp + duration + 1); // Past deadline
@@ -88,7 +89,7 @@ contract CrowdfundingTest is Test {
 
     function test_RevertWhen_RefundAfterSuccess() public {
         vm.prank(contributor);
-        crowdfunding.contribute{value: goal}("Support Test Project!");
+        crowdfunding.contribute{value: goal}();
         assertTrue(crowdfunding.fundingClosed(), "Funding should be closed");
         assertEq(crowdfunding.totalRaised(), goal, "Total raised should equal goal");
 
@@ -103,9 +104,9 @@ contract CrowdfundingTest is Test {
         address contributor2 = address(3);
         vm.deal(contributor2, 100 ether);
         vm.prank(contributor);
-        crowdfunding.contribute{value: 1 ether}("Support 1");
+        crowdfunding.contribute{value: 1 ether}();
         vm.prank(contributor2);
-        crowdfunding.contribute{value: 2 ether}("Support 2");
+        crowdfunding.contribute{value: 2 ether}();
         assertEq(crowdfunding.totalRaised(), 3 ether);
     }
 }
